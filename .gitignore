@@ -6,3 +6,5 @@ node_modules
 
 .env
 .zos.session
+contracts/artifacts/**
+contracts/GroupCurrencyTokenOwner_flat.sol

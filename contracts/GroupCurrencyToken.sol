@@ -3,7 +3,7 @@ pragma solidity ^0.7.0;
 
 import "./lib/SafeMath.sol";
 import "./ERC20.sol";
-import "./interfaces/HubI.sol";
+import "./Hub.sol";
 
 contract GroupCurrencyToken is ERC20 {
     using SafeMath for uint256;
@@ -38,6 +38,7 @@ contract GroupCurrencyToken is ERC20 {
         hub = _hub;
         treasury = _treasury;
         mintFeePerThousand = _mintFeePerThousand;
+        Hub(hub).organizationSignup();
     }
     
     function suspend(bool _suspend) public onlyOwner {
@@ -63,16 +64,23 @@ contract GroupCurrencyToken is ERC20 {
     function removeDelegatedTrustee(address _account) public onlyOwner {
         delegatedTrustees[_account] = false;
     }
-    
-    // Group currently is created from collateral tokens. Collateral is directly part of the directMembers dictionary.
+
+    // Group currently is created from collateral tokens, which have to be transferred to this Token before.
+    // Note: This function is not restricted, so anybody can mint with the collateral Token! The function call must be transactional to be safe.
     function mint(address _collateral, uint256 _amount) public returns (uint256) {
+        require(!suspended, "Minting has been suspended.");
+        return transferCollateralAndMint(_collateral, _amount);
+    }
+
+    // Group currently is created from collateral tokens. Collateral is directly part of the directMembers dictionary.
+    function memberMint(address _collateral, uint256 _amount) public returns (uint256) {
         require(!suspended, "Minting has been suspended.");
         require(directMembers[_collateral], "Collateral address is not marked as direct member.");
         return transferCollateralAndMint(_collateral, _amount);
     }
     
     // Group currently is created from collateral tokens. Collateral is trusted by someone in the delegatedTrustees dictionary.
-    function mintDelegate(address _trustedBy, address _collateral, uint256 _amount) public returns (uint256) {
+    function delegateMint(address _trustedBy, address _collateral, uint256 _amount) public returns (uint256) {
         require(!suspended, "Minting has been suspended.");
         require(_trustedBy != address(0), "trustedBy must be valid address.");
         // require(trusted_by in delegated_trustees)
@@ -89,7 +97,7 @@ contract GroupCurrencyToken is ERC20 {
         // mint amount-fee to msg.sender
         _mint(msg.sender, mintAmount);
         // Token Swap, send CRC from GCTO to Treasury (has been transferred to GCTO by transferThrough)
-        ERC20(_collateral).transferFrom(msg.sender, treasury, _amount);
+        ERC20(_collateral).transfer(treasury, _amount);
         emit Minted(msg.sender, _amount, mintAmount, mintFee);
         return mintAmount;
     }
@@ -98,5 +106,10 @@ contract GroupCurrencyToken is ERC20 {
         // this code shouldn't be necessary, but when it's removed the gas estimation methods
         // in the gnosis safe no longer work, still true as of solidity 7.1
         return super.transfer(dst, wad);
+    }
+
+    // Trust must be called by this contract (as a delegate) on Hub
+    function trust(address _trustee) public onlyOwner {
+        Hub(hub).trust(_trustee, 100);
     }
 }
