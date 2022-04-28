@@ -25,15 +25,16 @@ The initial drafts uses manual steps to setup, deploy and test the `GroupCurrenc
 * Open contracts in Remix-IDE at https://remix.ethereum.org/ with *remixd*: `remixd -s $(pwd) -u https://remix.ethereum.org`
 * Deploy `Hub.sol` with params `"1","1","CRC","Circles","50000000000000000000","1","1"`
 * Deploy `GroupCurrencyToken.sol` with params `"0xd9145CCE52D386f254917e481eB44e9943F39138","0x0000000000000000000000000000000000000001", "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4", 1, "GCT", "GCT"`
-* Call `signup` on Hub contract with Remix Account 1 `0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2`: Alice Signup
+  * This will also call `organizationSignup` on Hub.
+* Call `signup` on Hub contract with Remix Account 1 `0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2` (Alice Signup)
 	* This will deploy an individual Circles-Token from the Hub contract with Token address `0x5C9eb5D6a6C2c1B3EFc52255C0b356f116f6f66D`
 * Load `Token.sol` at `0x5C9eb5D6a6C2c1B3EFc52255C0b356f116f6f66D`
 	* This is the Circles-Token which will be used as Collateral Token
-* Transfer with Account 1 "1000" Tokens to GCT Address `0xd9145CCE52D386f254917e481eB44e9943F39138`
+* Transfer with Remix Account 1 "1000" Tokens to GCT Address `0xd9145CCE52D386f254917e481eB44e9943F39138`
 
 ### mint
 
-* [GroupCurrencyToken] `mint(0x5C9eb5D6a6C2c1B3EFc52255C0b356f116f6f66D,1000)` with any Remix Account (**unresticted access**)
+* [GroupCurrencyToken] `mint(0x5C9eb5D6a6C2c1B3EFc52255C0b356f116f6f66D,1000)` with any Remix Account (**Note: unrestricted access! Anybody can mint!**)
 
 ### memberMint
 
