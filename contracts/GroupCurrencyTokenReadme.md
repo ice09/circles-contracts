@@ -22,11 +22,36 @@ See https://aboutcircles.com/t/suggestion-for-group-currencies/410 for further d
 
 ## Tech Walk-Through
 
+### Ganache
+
 The initial drafts uses manual steps to setup, deploy and test the `GroupCurrencyToken` smart contract.
 
 * Clone circles-contract-group-currency fork: `git clone git@github.com:ice09/circles-contracts.git`
 * Switch to branch `hub-v1-comp`
 * Open contracts in Remix-IDE at https://remix.ethereum.org/ with *remixd*: `remixd -s $(pwd) -u https://remix.ethereum.org`
+* Start Ganache with mnemonic `test test test test test test test test test test test junk`
+* Deploy `Hub.sol` with params `"1","1","CRC","Circles","50000000000000000000","1","1"` -> **0x5FbDB2315678afecb367f032d93F642f64180aa3**
+* Deploy `GroupCurrencyToken.sol` with params 
+`"0x5FbDB2315678afecb367f032d93F642f64180aa3","0x0000000000000000000000000000000000000001", "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266", 1, "GCT", "GCT"` -> **0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512**
+  * This will also call `organizationSignup` on Hub.
+* Call `signup` on Hub contract with Ganache Account 1 `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` (Alice Signup)
+	* This will deploy an individual Circles-Token from the Hub contract with Token address **0xa16E02E87b7454126E5E10d957A927A7F5B5d2be**
+* Load `Token.sol` at `0xa16E02E87b7454126E5E10d957A927A7F5B5d2be`
+	* This is the Circles-Token which will be used as Collateral Token
+* Transfer with Remix Account 1 "1000" Tokens to GCT Address `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512`
+
+#### mint
+
+* [GroupCurrencyToken] `mint(0xa16E02E87b7454126E5E10d957A927A7F5B5d2be,1000)` with any Remix Account (**Note: unrestricted access! Anybody can mint!**)
+
+### Remix VM (London)
+
+The initial drafts uses manual steps to setup, deploy and test the `GroupCurrencyToken` smart contract.
+
+* Clone circles-contract-group-currency fork: `git clone git@github.com:ice09/circles-contracts.git`
+* Switch to branch `hub-v1-comp`
+* Open contracts in Remix-IDE at https://remix.ethereum.org/ with *remixd*: `remixd -s $(pwd) -u https://remix.ethereum.org`
+* Start Ganache with mnemonic `test test test test test test test test test test test junk`
 * Deploy `Hub.sol` with params `"1","1","CRC","Circles","50000000000000000000","1","1"`
 * Deploy `GroupCurrencyToken.sol` with params `"0xd9145CCE52D386f254917e481eB44e9943F39138","0x0000000000000000000000000000000000000001", "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4", 1, "GCT", "GCT"`
   * This will also call `organizationSignup` on Hub.
@@ -36,17 +61,17 @@ The initial drafts uses manual steps to setup, deploy and test the `GroupCurrenc
 	* This is the Circles-Token which will be used as Collateral Token
 * Transfer with Remix Account 1 "1000" Tokens to GCT Address `0xd9145CCE52D386f254917e481eB44e9943F39138`
 
-### mint
+#### mint
 
 * [GroupCurrencyToken] `mint(0x5C9eb5D6a6C2c1B3EFc52255C0b356f116f6f66D,1000)` with any Remix Account (**Note: unrestricted access! Anybody can mint!**)
 
-### memberMint
+#### memberMint
 
 * [CollateralToken] `approve` GroupCurrencyToken address (eg. amount 10000000000000000000)
 * [GroupCurrencyToken] `addMember` for Collateral Token address
 * [GroupCurrencyToken] `mint` 10000000000000000000 for Collateral token
 
-### delegateMint
+#### delegateMint
 
 * [CollateralToken] `approve` GroupCurrencyToken address (eg. amount 10000000000000000000)
 * [Hub] `signup` with second account
