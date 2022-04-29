@@ -38,7 +38,7 @@ The initial drafts uses manual steps to setup, deploy and test the `GroupCurrenc
 	* This will deploy an individual Circles-Token from the Hub contract with Token address **0xa16E02E87b7454126E5E10d957A927A7F5B5d2be**
 * Load `Token.sol` at `0xa16E02E87b7454126E5E10d957A927A7F5B5d2be`
 	* This is the Circles-Token which will be used as Collateral Token
-* Transfer with Remix Account 1 "1000" Tokens to GCT Address `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512`
+* Transfer with Ganache Account 1 "1000" Tokens to GCT Address `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512`
 
 #### mint
 
