@@ -8,6 +8,10 @@ See https://aboutcircles.com/t/suggestion-for-group-currencies/410 for further d
 
 ## Call Flows for mint and mintDelegate
 
+### mint
+
+![flow](https://drive.google.com/uc?export=view&id=1SJx0rxnHJnMONTHY59n1vRUNkhSqEe1M)
+
 ### memberMint
 
 ![flow](https://drive.google.com/uc?export=view&id=1QIYX3UM2HqW8UJGaUIH13SnADnZadb73)
