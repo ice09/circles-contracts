@@ -21,6 +21,7 @@ contract GroupCurrencyToken is ERC20 {
     address public treasury; // account which gets the personal tokens for whatever later usage
 
     uint public counter;
+    mapping (address => bool) public directMembers;
     mapping (uint => address) public delegatedTrustees;
     
     event Minted(address indexed receiver, uint256 amount, uint256 mintAmount, uint256 mintFee);
@@ -49,6 +50,14 @@ contract GroupCurrencyToken is ERC20 {
         owner = _owner;
     }
 
+    function addMemberToken(address _member) public onlyOwner {
+        directMembers[_member] = true;
+    }
+
+    function removeMemberToken(address _member) public onlyOwner {
+        directMembers[_member] = false;
+    }
+
     function addDelegatedTrustee(address _account) public onlyOwner {
         delegatedTrustees[counter] = _account;
         counter++;
@@ -62,10 +71,20 @@ contract GroupCurrencyToken is ERC20 {
     // Note: This function is not restricted, so anybody can mint with the collateral Token! The function call must be transactional to be safe.
     function mint(address _collateral, uint256 _amount) public returns (uint256) {
         require(!suspended, "Minting has been suspended.");
-        return transferCollateralAndMint(_collateral, _amount);
+        return mintGroupCurrencyTokenForCollateral(_collateral, _amount);
+    }
+
+    // Group currently is created from collateral tokens. Collateral is directly part of the directMembers dictionary.
+    function memberMint(address _collateral, uint256 _amount) public returns (uint256) {
+        require(!suspended, "Minting has been suspended.");
+        require(directMembers[_collateral], "Collateral address is not marked as direct member.");
+        return mintGroupCurrencyTokenForCollateral(_collateral, _amount);
     }
     
-    function transferCollateralAndMint(address _collateral, uint256 _amount) internal returns (uint256) {
+    function mintGroupCurrencyTokenForCollateral(address _collateral, uint256 _amount) internal returns (uint256) {
+        // Check if the Collateral Owner is trusted by this GroupCurrencyToken
+        address collateralOwner = HubI(hub).tokenToUser(_collateral);
+        require(HubI(hub).limits(this, collateralOwner) > 0, "GCT does not trust collateral owner.");
         uint256 mintFee = (_amount.div(1000)).mul(mintFeePerThousand);
         uint256 mintAmount = _amount.sub(mintFee);
         // mint amount-fee to msg.sender
