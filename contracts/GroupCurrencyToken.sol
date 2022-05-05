@@ -20,8 +20,8 @@ contract GroupCurrencyToken is ERC20 {
     address public hub; // the address of the hub this token is associated with
     address public treasury; // account which gets the personal tokens for whatever later usage
 
-    mapping (address => bool) public directMembers;
-    mapping (address => bool) public delegatedTrustees;
+    uint public counter;
+    mapping (uint => address) public delegatedTrustees;
     
     event Minted(address indexed receiver, uint256 amount, uint256 mintAmount, uint256 mintFee);
 
@@ -48,46 +48,20 @@ contract GroupCurrencyToken is ERC20 {
     function changeOwner(address _owner) public onlyOwner {
         owner = _owner;
     }
-    
-    function addMemberToken(address _member) public onlyOwner {
-        directMembers[_member] = true;
-    }
 
-    function removeMemberToken(address _member) public onlyOwner {
-        directMembers[_member] = false;
-    }
-    
     function addDelegatedTrustee(address _account) public onlyOwner {
-        delegatedTrustees[_account] = true;
+        delegatedTrustees[counter] = _account;
+        counter++;
     }
 
-    function removeDelegatedTrustee(address _account) public onlyOwner {
-        delegatedTrustees[_account] = false;
+    function removeDelegatedTrustee(uint _index) public onlyOwner {
+        delegatedTrustees[_index] = address(0);
     }
 
     // Group currently is created from collateral tokens, which have to be transferred to this Token before.
     // Note: This function is not restricted, so anybody can mint with the collateral Token! The function call must be transactional to be safe.
     function mint(address _collateral, uint256 _amount) public returns (uint256) {
         require(!suspended, "Minting has been suspended.");
-        return transferCollateralAndMint(_collateral, _amount);
-    }
-
-    // Group currently is created from collateral tokens. Collateral is directly part of the directMembers dictionary.
-    function memberMint(address _collateral, uint256 _amount) public returns (uint256) {
-        require(!suspended, "Minting has been suspended.");
-        require(directMembers[_collateral], "Collateral address is not marked as direct member.");
-        return transferCollateralAndMint(_collateral, _amount);
-    }
-    
-    // Group currently is created from collateral tokens. Collateral is trusted by someone in the delegatedTrustees dictionary.
-    function delegateMint(address _trustedBy, address _collateral, uint256 _amount) public returns (uint256) {
-        require(!suspended, "Minting has been suspended.");
-        require(_trustedBy != address(0), "trustedBy must be valid address.");
-        // require(trusted_by in delegated_trustees)
-        require(delegatedTrustees[_trustedBy], "trustedBy not contained in delegatedTrustees.");
-        address collateralOwner = HubI(hub).tokenToUser(_collateral);
-        // require(trusted_by.trust(collateral)
-        require(HubI(hub).limits(_trustedBy, collateralOwner) > 0, "trustedBy does not trust collateral owner.");
         return transferCollateralAndMint(_collateral, _amount);
     }
     
@@ -102,14 +76,25 @@ contract GroupCurrencyToken is ERC20 {
         return mintAmount;
     }
 
-    function transfer(address dst, uint256 wad) public override returns (bool) {
+    function transfer(address _dst, uint256 _wad) public override returns (bool) {
         // this code shouldn't be necessary, but when it's removed the gas estimation methods
         // in the gnosis safe no longer work, still true as of solidity 7.1
-        return super.transfer(dst, wad);
+        return super.transfer(_dst, _wad);
     }
 
     // Trust must be called by this contract (as a delegate) on Hub
-    function trust(address _trustee) public onlyOwner {
+    function trust(address _trustee) public {
+        require(_trustee != address(0), "trustee must be valid address.");
+        bool trustedByAnyDelegate = false;
+        for (uint i=0; i < counter; i++) {
+            if (delegatedTrustees[i] != address(0)) {
+                if (HubI(hub).limits(delegatedTrustees[i], _trustee) > 0) {
+                    trustedByAnyDelegate = true;
+                    break;
+                }
+            }
+        }
+        require(trustedByAnyDelegate, "trustee is not trusted by any delegate.");
         Hub(hub).trust(_trustee, 100);
     }
 }
