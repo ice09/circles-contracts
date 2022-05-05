@@ -61,6 +61,8 @@ contract GroupCurrencyToken is ERC20 {
     }
 
     function addMemberToken(address _member) public onlyOwner {
+        address memberTokenUser = HubI(hub).tokenToUser(_member);
+        _directTrust(memberTokenUser);
         directMembers[_member] = true;
     }
 
@@ -87,17 +89,17 @@ contract GroupCurrencyToken is ERC20 {
         } else if (onlyTrustedCanMint) {
             require(HubI(hub).limits(address(this), msg.sender) > 0, "GCT does not trust sender.");
         }
-        return mintGroupCurrencyTokenForCollateral(_collateral, _amount);
+        return _mintGroupCurrencyTokenForCollateral(_collateral, _amount);
     }
 
     // Group currently is created from collateral tokens. Collateral is directly part of the directMembers dictionary.
     function memberMint(address _collateral, uint256 _amount) public returns (uint256) {
         require(!suspended, "Minting has been suspended.");
         require(directMembers[_collateral], "Collateral address is not marked as direct member.");
-        return mintGroupCurrencyTokenForCollateral(_collateral, _amount);
+        return _mintGroupCurrencyTokenForCollateral(_collateral, _amount);
     }
     
-    function mintGroupCurrencyTokenForCollateral(address _collateral, uint256 _amount) internal returns (uint256) {
+    function _mintGroupCurrencyTokenForCollateral(address _collateral, uint256 _amount) internal returns (uint256) {
         // Check if the Collateral Owner is trusted by this GroupCurrencyToken
         address collateralOwner = HubI(hub).tokenToUser(_collateral);
         require(HubI(hub).limits(address(this), collateralOwner) > 0, "GCT does not trust collateral owner.");
@@ -118,18 +120,30 @@ contract GroupCurrencyToken is ERC20 {
     }
 
     // Trust must be called by this contract (as a delegate) on Hub
-    function trust(address _trustee) public {
+    function trust(uint _index, address _trustee) public {
         require(_trustee != address(0), "trustee must be valid address.");
         bool trustedByAnyDelegate = false;
-        for (uint i=0; i < counter; i++) {
-            if (delegatedTrustees[i] != address(0)) {
-                if (HubI(hub).limits(delegatedTrustees[i], _trustee) > 0) {
-                    trustedByAnyDelegate = true;
-                    break;
+        if (_index == 0) {
+            for (uint i=0; i < counter; i++) {
+                if (delegatedTrustees[i] != address(0)) {
+                    if (HubI(hub).limits(delegatedTrustees[i], _trustee) > 0) {
+                        trustedByAnyDelegate = true;
+                        break;
+                    }
                 }
+            }
+        } else {
+            if (HubI(hub).limits(delegatedTrustees[_index], _trustee) > 0) {
+                trustedByAnyDelegate = true;
             }
         }
         require(trustedByAnyDelegate, "trustee is not trusted by any delegate.");
+        Hub(hub).trust(_trustee, 100);
+    }
+
+    // Trust must be called by this contract (as a delegate) on Hub
+    function _directTrust(address _trustee) internal {
+        require(_trustee != address(0), "trustee must be valid address.");
         Hub(hub).trust(_trustee, 100);
     }
 }
