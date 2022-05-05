@@ -12,6 +12,8 @@ contract GroupCurrencyToken is ERC20 {
     uint8 public mintFeePerThousand;
     
     bool public suspended;
+    bool public onlyOwnerCanMint;
+    bool public onlyTrustedCanMint;
     
     string public name;
     string public override symbol;
@@ -50,6 +52,14 @@ contract GroupCurrencyToken is ERC20 {
         owner = _owner;
     }
 
+    function setOnlyOwnerCanMint(bool _onlyOwnerCanMint) public onlyOwner {
+        onlyOwnerCanMint = _onlyOwnerCanMint;
+    }
+
+    function setOnlyTrustedCanMint(bool _onlyTrustedCanMint) public onlyOwner {
+        onlyTrustedCanMint = _onlyTrustedCanMint;
+    }
+
     function addMemberToken(address _member) public onlyOwner {
         directMembers[_member] = true;
     }
@@ -71,6 +81,12 @@ contract GroupCurrencyToken is ERC20 {
     // Note: This function is not restricted, so anybody can mint with the collateral Token! The function call must be transactional to be safe.
     function mint(address _collateral, uint256 _amount) public returns (uint256) {
         require(!suspended, "Minting has been suspended.");
+        // Check status
+        if (onlyOwnerCanMint) {
+            require(msg.sender == owner, "Only owner can mint.");
+        } else if (onlyTrustedCanMint) {
+            require(HubI(hub).limits(address(this), msg.sender) > 0, "GCT does not trust sender.");
+        }
         return mintGroupCurrencyTokenForCollateral(_collateral, _amount);
     }
 
@@ -84,7 +100,7 @@ contract GroupCurrencyToken is ERC20 {
     function mintGroupCurrencyTokenForCollateral(address _collateral, uint256 _amount) internal returns (uint256) {
         // Check if the Collateral Owner is trusted by this GroupCurrencyToken
         address collateralOwner = HubI(hub).tokenToUser(_collateral);
-        require(HubI(hub).limits(this, collateralOwner) > 0, "GCT does not trust collateral owner.");
+        require(HubI(hub).limits(address(this), collateralOwner) > 0, "GCT does not trust collateral owner.");
         uint256 mintFee = (_amount.div(1000)).mul(mintFeePerThousand);
         uint256 mintAmount = _amount.sub(mintFee);
         // mint amount-fee to msg.sender
