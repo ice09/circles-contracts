@@ -61,6 +61,7 @@ contract GroupCurrencyToken is ERC20 {
     }
 
     function addMemberToken(address _member) public onlyOwner {
+        // TODO: Should the member be trusted?
         address memberTokenUser = HubI(hub).tokenToUser(_member);
         _directTrust(memberTokenUser);
         directMembers[_member] = true;
@@ -96,13 +97,17 @@ contract GroupCurrencyToken is ERC20 {
     function memberMint(address _collateral, uint256 _amount) public returns (uint256) {
         require(!suspended, "Minting has been suspended.");
         require(directMembers[_collateral], "Collateral address is not marked as direct member.");
-        return _mintGroupCurrencyTokenForCollateral(_collateral, _amount);
+        return _mintGroupCurrencyTokenForCollateralNonTrusted(_collateral, _amount);
     }
-    
+
     function _mintGroupCurrencyTokenForCollateral(address _collateral, uint256 _amount) internal returns (uint256) {
         // Check if the Collateral Owner is trusted by this GroupCurrencyToken
         address collateralOwner = HubI(hub).tokenToUser(_collateral);
         require(HubI(hub).limits(address(this), collateralOwner) > 0, "GCT does not trust collateral owner.");
+        return _mintGroupCurrencyTokenForCollateralNonTrusted(_collateral, _amount);
+    }
+
+    function _mintGroupCurrencyTokenForCollateralNonTrusted(address _collateral, uint256 _amount) internal returns (uint256) {
         uint256 mintFee = (_amount.div(1000)).mul(mintFeePerThousand);
         uint256 mintAmount = _amount.sub(mintFee);
         // mint amount-fee to msg.sender
