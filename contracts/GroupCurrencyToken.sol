@@ -23,7 +23,6 @@ contract GroupCurrencyToken is ERC20 {
     address public treasury; // account which gets the personal tokens for whatever later usage
 
     uint public counter;
-    mapping (address => bool) public directMembers;
     mapping (uint => address) public delegatedTrustees;
     
     event Minted(address indexed receiver, uint256 amount, uint256 mintAmount, uint256 mintFee);
@@ -61,14 +60,13 @@ contract GroupCurrencyToken is ERC20 {
     }
 
     function addMemberToken(address _member) public onlyOwner {
-        // TODO: Should the member be trusted?
         address memberTokenUser = HubI(hub).tokenToUser(_member);
-        _directTrust(memberTokenUser);
-        directMembers[_member] = true;
+        _directTrust(memberTokenUser, 100);
     }
 
     function removeMemberToken(address _member) public onlyOwner {
-        directMembers[_member] = false;
+        address memberTokenUser = HubI(hub).tokenToUser(_member);
+        _directTrust(memberTokenUser, 0);
     }
 
     function addDelegatedTrustee(address _account) public onlyOwner {
@@ -93,21 +91,10 @@ contract GroupCurrencyToken is ERC20 {
         return _mintGroupCurrencyTokenForCollateral(_collateral, _amount);
     }
 
-    // Group currently is created from collateral tokens. Collateral is directly part of the directMembers dictionary.
-    function memberMint(address _collateral, uint256 _amount) public returns (uint256) {
-        require(!suspended, "Minting has been suspended.");
-        require(directMembers[_collateral], "Collateral address is not marked as direct member.");
-        return _mintGroupCurrencyTokenForCollateralNonTrusted(_collateral, _amount);
-    }
-
     function _mintGroupCurrencyTokenForCollateral(address _collateral, uint256 _amount) internal returns (uint256) {
         // Check if the Collateral Owner is trusted by this GroupCurrencyToken
         address collateralOwner = HubI(hub).tokenToUser(_collateral);
         require(HubI(hub).limits(address(this), collateralOwner) > 0, "GCT does not trust collateral owner.");
-        return _mintGroupCurrencyTokenForCollateralNonTrusted(_collateral, _amount);
-    }
-
-    function _mintGroupCurrencyTokenForCollateralNonTrusted(address _collateral, uint256 _amount) internal returns (uint256) {
         uint256 mintFee = (_amount.div(1000)).mul(mintFeePerThousand);
         uint256 mintAmount = _amount.sub(mintFee);
         // mint amount-fee to msg.sender
@@ -128,18 +115,13 @@ contract GroupCurrencyToken is ERC20 {
     function trust(uint _index, address _trustee) public {
         require(_trustee != address(0), "trustee must be valid address.");
         bool trustedByAnyDelegate = false;
-        if (_index == 0) {
-            for (uint i=0; i < counter; i++) {
-                if (delegatedTrustees[i] != address(0)) {
-                    if (HubI(hub).limits(delegatedTrustees[i], _trustee) > 0) {
-                        trustedByAnyDelegate = true;
-                        break;
-                    }
+        // Start with _index to save gas if index is known
+        for (uint i = _index; i < counter; i++) {
+            if (delegatedTrustees[i] != address(0)) {
+                if (HubI(hub).limits(delegatedTrustees[i], _trustee) > 0) {
+                    trustedByAnyDelegate = true;
+                    break;
                 }
-            }
-        } else {
-            if (HubI(hub).limits(delegatedTrustees[_index], _trustee) > 0) {
-                trustedByAnyDelegate = true;
             }
         }
         require(trustedByAnyDelegate, "trustee is not trusted by any delegate.");
@@ -147,8 +129,8 @@ contract GroupCurrencyToken is ERC20 {
     }
 
     // Trust must be called by this contract (as a delegate) on Hub
-    function _directTrust(address _trustee) internal {
+    function _directTrust(address _trustee, uint _amount) internal {
         require(_trustee != address(0), "trustee must be valid address.");
-        Hub(hub).trust(_trustee, 100);
+        Hub(hub).trust(_trustee, _amount);
     }
 }
