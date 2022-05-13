@@ -80,7 +80,7 @@ contract GroupCurrencyToken is ERC20 {
 
     // Group currently is created from collateral tokens, which have to be transferred to this Token before.
     // Note: This function is not restricted, so anybody can mint with the collateral Token! The function call must be transactional to be safe.
-    function mint(address _collateral, uint256 _amount) public returns (uint256) {
+    function mint(address[] calldata _collateral, uint256[] calldata _amount) public returns (uint256) {
         require(!suspended, "Minting has been suspended.");
         // Check status
         if (onlyOwnerCanMint) {
@@ -88,7 +88,11 @@ contract GroupCurrencyToken is ERC20 {
         } else if (onlyTrustedCanMint) {
             require(HubI(hub).limits(address(this), msg.sender) > 0, "GCT does not trust sender.");
         }
-        return _mintGroupCurrencyTokenForCollateral(_collateral, _amount);
+        uint mintedAmount = 0;
+        for (uint i = 0; i < _collateral.length; i++) {
+            mintedAmount += _mintGroupCurrencyTokenForCollateral(_collateral[i], _amount[i]);
+        }
+        return mintedAmount;
     }
 
     function _mintGroupCurrencyTokenForCollateral(address _collateral, uint256 _amount) internal returns (uint256) {
@@ -112,7 +116,7 @@ contract GroupCurrencyToken is ERC20 {
     }
 
     // Trust must be called by this contract (as a delegate) on Hub
-    function trust(uint _index, address _trustee) public {
+    function delegateTrust(uint _index, address _trustee) public {
         require(_trustee != address(0), "trustee must be valid address.");
         bool trustedByAnyDelegate = false;
         // Start with _index to save gas if index is known
