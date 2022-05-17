@@ -36,6 +36,7 @@ The initial drafts uses manual steps to setup, deploy and test the `GroupCurrenc
   * This will also call `organizationSignup` on Hub.
 * Call `signup` on Hub contract with Ganache Account 1 `0x70997970C51812dc3A010C7d01b50e0d17dc79C8` (Alice Signup)
 	* This will deploy an individual Circles-Token from the Hub contract with Token address **0xa16E02E87b7454126E5E10d957A927A7F5B5d2be**
+* Call `addMemberToken` at `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512` with parameter `0xa16E02E87b7454126E5E10d957A927A7F5B5d2be`
 * Load `Token.sol` at `0xa16E02E87b7454126E5E10d957A927A7F5B5d2be`
 	* This is the Circles-Token which will be used as Collateral Token
 * Transfer with Ganache Account 1 "1000" Tokens to GCT Address `0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512`
@@ -56,6 +57,7 @@ The initial drafts uses manual steps to setup, deploy and test the `GroupCurrenc
   * This will also call `organizationSignup` on Hub.
 * Call `signup` on Hub contract with Remix Account 1 `0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2` (Alice Signup)
 	* This will deploy an individual Circles-Token from the Hub contract with Token address `0x5C9eb5D6a6C2c1B3EFc52255C0b356f116f6f66D`
+* Call `addMemberToken` at `...` with parameter `...`
 * Load `Token.sol` at `0x5C9eb5D6a6C2c1B3EFc52255C0b356f116f6f66D`
 	* This is the Circles-Token which will be used as Collateral Token
 * Transfer with Remix Account 1 "1000" Tokens to GCT Address `0xd8b934580fcE35a11B58C6D73aDeE468a2833fa8`
