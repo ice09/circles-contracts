@@ -25,7 +25,15 @@ contract GroupCurrencyToken is ERC20 {
     uint public counter;
     mapping (uint => address) public delegatedTrustees;
     
-    event Minted(address indexed receiver, uint256 amount, uint256 mintAmount, uint256 mintFee);
+    event Minted(address indexed _receiver, uint256 _amount, uint256 _mintAmount, uint256 _mintFee);
+    event Suspended(address indexed _owner);
+    event OwnerChanged(address indexed _old, address indexed _new);
+    event OnlyOwnerCanMint(bool indexed _onlyOwnerCanMint);
+    event OnlyTrustedCanMint(bool indexed _onlyTrustedCanMint);
+    event MemberTokenAdded(address indexed _memberToken);
+    event MemberTokenRemoved(address indexed _memberToken);
+    event DelegatedTrusteeAdded(address indexed _delegatedTrustee);
+    event DelegatedTrusteeRemoved(address indexed _delegatedTrustee);
 
     /// @dev modifier allowing function to be only called by the token owner
     modifier onlyOwner() {
@@ -45,37 +53,46 @@ contract GroupCurrencyToken is ERC20 {
     
     function suspend(bool _suspend) public onlyOwner {
         suspended = _suspend;
+        emit Suspended(owner);
     }
     
     function changeOwner(address _owner) public onlyOwner {
         owner = _owner;
+        emit OwnerChanged(msg.sender, owner);
     }
 
     function setOnlyOwnerCanMint(bool _onlyOwnerCanMint) public onlyOwner {
         onlyOwnerCanMint = _onlyOwnerCanMint;
+        emit OnlyOwnerCanMint(onlyOwnerCanMint);
     }
 
     function setOnlyTrustedCanMint(bool _onlyTrustedCanMint) public onlyOwner {
         onlyTrustedCanMint = _onlyTrustedCanMint;
+        emit OnlyTrustedCanMint(onlyTrustedCanMint);
     }
 
     function addMemberToken(address _member) public onlyOwner {
         address memberTokenUser = HubI(hub).tokenToUser(_member);
         _directTrust(memberTokenUser, 100);
+        emit MemberTokenAdded(memberTokenUser);
     }
 
     function removeMemberToken(address _member) public onlyOwner {
         address memberTokenUser = HubI(hub).tokenToUser(_member);
         _directTrust(memberTokenUser, 0);
+        emit MemberTokenRemoved(memberTokenUser);
     }
 
     function addDelegatedTrustee(address _account) public onlyOwner {
         delegatedTrustees[counter] = _account;
         counter++;
+        emit DelegatedTrusteeAdded(_account);
     }
 
     function removeDelegatedTrustee(uint _index) public onlyOwner {
+        address delegatedTrustee = delegatedTrustees[_index];
         delegatedTrustees[_index] = address(0);
+        emit DelegatedTrusteeRemoved(delegatedTrustee);
     }
 
     // Group currently is created from collateral tokens, which have to be transferred to this Token before.
