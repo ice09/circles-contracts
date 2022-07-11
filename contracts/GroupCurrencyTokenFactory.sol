@@ -5,7 +5,7 @@ import "./GroupCurrencyToken.sol";
 
 contract GroupCurrencyTokenFactory {
 
-    event GroupCurrencyTokenCreated(address indexed _address, address indexed _deployer, string _name);
+    event GroupCurrencyTokenCreated(address indexed _address, address indexed _deployer);
 
     function createGroupCurrencyToken(address _hub, address _treasury, address _owner, uint8 _mintFeePerThousand, string memory _name, string memory _symbol) public {
         GroupCurrencyToken gct = new GroupCurrencyToken(
@@ -16,7 +16,7 @@ contract GroupCurrencyTokenFactory {
             _name,
             _symbol
         );
-        emit GroupCurrencyTokenCreated(address(gct), msg.sender, _name);
+        emit GroupCurrencyTokenCreated(address(gct), msg.sender);
     }
 
 }
